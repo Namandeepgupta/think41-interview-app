@@ -1,0 +1,93 @@
+product-api/
+  - app.py
+  - db/
+      - products.db
+  - models.py 
+  - requirements.txt
+  - config.py
+
+
+-- requirements.txt --
+Flask
+flask-cors
+Flask-SQLAlchemy
+
+------------------------------------------------------
+
+--config.py--
+import os
+BASE_DIR = os.path.abspath
+(os.path.dirname(__file__))
+class Config:
+  SQLALCHEMY_DATABASE_URI = 'sqlite:///' os.path.join(BASE_DIR,'db','products.db')
+  SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+--------------------------------------------------------------------------------------------------------------
+
+--models.py--
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
+
+class Product(db.Model):
+    __tablename__ = 'products'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    category = db.Column(db.String(100), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    description = db.Column(db.String(300))
+
+-----------------------------------------------------------------------------------------------------------------
+
+--app.py--
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from models import db, Product
+from config import Config
+
+app = Flask(__name__)
+app.config.from_object(Config)
+
+db.init_app(app)
+CORS(app)
+
+@app.route("/api/products", methods=["GET"])
+def get_products():
+    products = Product.query.all()
+    result = [
+        {
+            "id": p.id,
+            "name": p.name,
+            "category": p.category,
+            "price": p.price,
+            "description": p.description
+        } for p in products
+    ]
+    return jsonify(result), 200
+
+@app.route("/api/products/<int:product_id>", methods=["GET"])
+def get_product_by_id(product_id):
+    product = Product.query.get(product_id)
+    if not product:
+        return jsonify({"error": "Product not found"}), 404
+
+    result = {
+        "id": product.id,
+        "name": product.name,
+        "category": product.category,
+        "price": product.price,
+        "description": product.description
+    }
+    return jsonify(result), 200
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return jsonify({"error": "Endpoint not found"}), 404
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
+------------------------------------------------------------------------------------------------------------------------
+
+
+
