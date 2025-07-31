@@ -1,0 +1,30 @@
+import splite3
+import pandas as pd
+
+conn = sqlite3.connect('ecommerce.db')
+cursor = conn.cursor()
+
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS products(
+  id INTEGER PRIMARY KEY,
+  cost REAL,
+  category TEXT,
+  name TEXT,
+  brand TEXT,
+  retail_price REAL,
+  department TEXT,
+  sku TEXT,
+  distribution_center_id INTEGER
+)
+''')
+
+df = pd.read_csv('products.csv')
+df.columns = [col.strip().lower().replace(" ","_")
+for col in df.columns]
+
+df.to_sql('products', conn, if_exists = 'replace', index = False)
+cursor.excecute("SELECT COUNT(*) FROM products")
+print(" Products loaded:", cursor.fetchone()[0])
+
+conn.commit()
+conn.close()
